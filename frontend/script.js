@@ -269,12 +269,6 @@ async function generateImage(prompt, aspect) {
         currentStencilUrl = null;
         if (currentUser) {
             currentDocumentId = await saveTattooToHistory(currentUser.uid, imageBlob, prompt, aspect);
-
-            // Deduct Credits Front-end Check MVP
-            const newCredits = window.userCredits - 50;
-            await updateDoc(doc(db, "users", currentUser.uid), {
-                credits: newCredits
-            });
         }
 
     } catch (error) {
@@ -463,7 +457,7 @@ onAuthStateChanged(auth, async (user) => {
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         if (!userSnap.exists()) {
-            await setDoc(userRef, { credits: 250, email: user.email });
+            await setDoc(userRef, { credits: 500, email: user.email });
         }
 
         // Listen to Credit changes live 
@@ -614,4 +608,25 @@ async function loadUserHistory(uid) {
             console.warn("Firestore needs an index creation! Check console link:", e.message);
         }
     }
+}
+
+// Support Modal Logic
+const supportBtn = document.getElementById('support-btn');
+const supportModal = document.getElementById('support-modal');
+const closeModal = document.querySelector('.close-modal');
+
+if (supportBtn && supportModal && closeModal) {
+    supportBtn.addEventListener('click', () => {
+        supportModal.classList.remove('hidden');
+    });
+
+    closeModal.addEventListener('click', () => {
+        supportModal.classList.add('hidden');
+    });
+
+    window.addEventListener('click', (event) => {
+        if (event.target === supportModal) {
+            supportModal.classList.add('hidden');
+        }
+    });
 }
