@@ -35,7 +35,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors()); // In production on Hostinger, you can restrict CORS to your domain
+app.use(cors());
+
+// Root Health Check
+app.get('/', (req, res) => {
+    res.send('Tattoo Tool API is active and running safely! (Backend)');
+});
 
 // STRIPE WEBHOOK (Must be raw before express.json parsing)
 app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
