@@ -5,8 +5,11 @@ import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serve
 
 let app, auth, provider, storage, db;
 
+// SETUP: Change this to your live Render backend URL after deployment!
+const BACKEND_URL = "http://localhost:3000"; // e.g., "https://tattoo-backend-xxx.onrender.com"
+
 // Fetch config securely from backend env
-const configResponse = await fetch('http://localhost:3000/api/config');
+const configResponse = await fetch(`${BACKEND_URL}/api/config`);
 const { firebaseConfig } = await configResponse.json();
 
 app = initializeApp(firebaseConfig);
@@ -225,7 +228,7 @@ async function generateImage(prompt, aspect) {
     try {
         // REPLACE THE URL with your actual backend Hostinger URL once deployed!
         // Local testing assumes backend runs on port 3000
-        const backendUrl = "http://localhost:3000/api/generate";
+        const backendUrl = `${BACKEND_URL}/api/generate`;
 
         const response = await fetch(backendUrl, {
             method: 'POST',
@@ -302,7 +305,7 @@ document.getElementById('stencil-btn').addEventListener('click', async () => {
     try {
         if (currentStencilUrl) {
             // Already generated and saved previously! Use the proxy to avoid CORS
-            const proxyUrl = `http://localhost:3000/api/proxy-image?url=${encodeURIComponent(currentStencilUrl)}`;
+            const proxyUrl = `${BACKEND_URL}/api/proxy-image?url=${encodeURIComponent(currentStencilUrl)}`;
             const cachedResponse = await fetch(proxyUrl);
             if (!cachedResponse.ok) throw new Error("Proxy request failed");
 
@@ -336,7 +339,7 @@ document.getElementById('stencil-btn').addEventListener('click', async () => {
         });
 
         // Call our new Stencil Gen backend route
-        const backendUrl = "http://localhost:3000/api/stencil";
+        const backendUrl = `${BACKEND_URL}/api/stencil`;
 
         const stencilResponse = await fetch(backendUrl, {
             method: 'POST',
@@ -417,7 +420,7 @@ document.getElementById('buy-credits-btn').addEventListener('click', async () =>
     buyBtn.disabled = true;
 
     try {
-        const response = await fetch('http://localhost:3000/api/create-checkout-session', {
+        const response = await fetch(`${BACKEND_URL}/api/create-checkout-session`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUser.uid })
@@ -584,7 +587,7 @@ async function loadUserHistory(uid) {
                 // VERY IMPORTANT: Convert external Firebase URL back to a Blob URL
                 // So that our C++ Stencil filter proxy or standard download link works flawlessly without CORS blocks!
                 try {
-                    const proxyUrl = `http://localhost:3000/api/proxy-image?url=${encodeURIComponent(data.imageUrl)}`;
+                    const proxyUrl = `${BACKEND_URL}/api/proxy-image?url=${encodeURIComponent(data.imageUrl)}`;
                     const historyResponse = await fetch(proxyUrl);
                     if (!historyResponse.ok) throw new Error("Proxy request failed");
 

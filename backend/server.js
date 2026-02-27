@@ -81,8 +81,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
                 },
             ],
             mode: 'payment',
-            success_url: 'http://localhost:8080/?payment=success',
-            cancel_url: 'http://localhost:8080/?payment=canceled',
+            success_url: `${process.env.FRONTEND_URL || 'http://localhost:8080'}/?payment=success`,
+            cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:8080'}/?payment=canceled`,
             client_reference_id: userId // CRITICAL: Links the payment instance securely to the user ID!
         });
 
