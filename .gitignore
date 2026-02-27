@@ -1,0 +1,22 @@
+# Node modules
+node_modules/
+
+# Environment Variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+backend/.env
+
+# Firebase Secure File
+serviceAccountKey.json
+backend/serviceAccountKey.json
+
+# Mac OS
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
