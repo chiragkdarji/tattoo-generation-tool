@@ -404,7 +404,6 @@ img#generated-image {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
 }
 
 .login-btn {
@@ -428,22 +427,6 @@ img#generated-image {
 .login-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(255, 255, 255, 0.15) !important;
-}
-
-.apple-btn {
-  background-color: #000 !important;
-  color: #fff !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-.apple-btn:hover {
-  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1) !important;
-}
-
-.apple-icon {
-  width: 20px;
-  height: 20px;
-  margin-right: 12px;
 }
 
 .login-alt {
