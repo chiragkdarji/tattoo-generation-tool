@@ -6,7 +6,7 @@ import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serve
 let app, auth, provider, storage, db;
 
 // SETUP: Change this to your live Render backend URL after deployment!
-const BACKEND_URL = "http://localhost:3000"; // e.g., "https://tattoo-backend-xxx.onrender.com"
+const BACKEND_URL = "https://tattoo-generation-tool.onrender.com"; // e.g., "https://tattoo-backend-xxx.onrender.com"
 
 // Fetch config securely from backend env
 const configResponse = await fetch(`${BACKEND_URL}/api/config`);
@@ -233,7 +233,11 @@ async function generateImage(prompt, aspect) {
         const response = await fetch(backendUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: prompt, aspect_ratio: aspect })
+            body: JSON.stringify({
+                prompt: prompt,
+                aspect_ratio: aspect,
+                userId: currentUser.uid // Pass user ID for backend credit check
+            })
         });
 
         if (!response.ok) {

@@ -109,11 +109,45 @@ app.get('/api/config', (req, res) => {
 // Main Generate Route (Proxying to Nano Banana)
 app.post('/api/generate', async (req, res) => {
     try {
-        const { prompt, aspect_ratio } = req.body;
+        const { prompt, aspect_ratio, userId } = req.body;
 
         if (!prompt) {
             return res.status(400).json({ error: "Prompt is required." });
         }
+
+        // --- BACKEND CREDIT SECURITY ---
+        if (!userId) {
+            return res.status(401).json({ error: "User authentication required for credits." });
+        }
+
+        try {
+            if (admin.apps.length > 0) {
+                const db = admin.firestore();
+                const userRef = db.collection('users').doc(userId);
+                const userSnap = await userRef.get();
+
+                if (!userSnap.exists) {
+                    return res.status(404).json({ error: "User wallet not found." });
+                }
+
+                const userData = userSnap.data();
+                if ((userData.credits || 0) < 50) {
+                    return res.status(403).json({ error: "Insufficient credits. You need 50 credits per generation." });
+                }
+
+                // Deduct 50 credits securely
+                await userRef.update({
+                    credits: admin.firestore.FieldValue.increment(-50)
+                });
+                console.log(`Deducted 50 credits from User ${userId}. Remaining will be approx ${userData.credits - 50}`);
+            } else {
+                console.warn("Firebase Admin not active - skipping backend credit deduction (Debug Mode)");
+            }
+        } catch (e) {
+            console.error("Credit deduction failed:", e);
+            return res.status(500).json({ error: "Database error during credit verification." });
+        }
+        // -------------------------------
 
         console.log(`Sending Prompt to Nano Banana 2.5: ${prompt}`);
 
