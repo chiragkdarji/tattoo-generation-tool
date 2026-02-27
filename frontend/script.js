@@ -242,7 +242,8 @@ async function generateImage(prompt, aspect) {
 
         if (!response.ok) {
             const err = await response.json();
-            throw new Error(err.error || 'Server error occurred');
+            const message = err.details ? `${err.error} (${err.details})` : (err.error || 'Server error occurred');
+            throw new Error(message);
         }
 
         // Ensure we handle image as a Blob directly

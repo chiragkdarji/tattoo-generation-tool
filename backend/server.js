@@ -9,11 +9,17 @@ const admin = require('firebase-admin');
 // Initialize Firebase Admin (Required for secure backend credit updates!)
 // WARNING: Locally this requires serviceAccountKey.json.
 try {
-    if (process.env.FIREBASE_PROJECT_ID) {
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        console.log("Firebase Admin initialized via Environment Variable JSON.");
+    } else if (process.env.FIREBASE_PROJECT_ID) {
         admin.initializeApp({
             projectId: process.env.FIREBASE_PROJECT_ID
         });
-        console.log("Firebase Admin initialized for project:", process.env.FIREBASE_PROJECT_ID);
+        console.log("Firebase Admin initialized for project ID:", process.env.FIREBASE_PROJECT_ID);
     } else {
         admin.initializeApp();
     }
