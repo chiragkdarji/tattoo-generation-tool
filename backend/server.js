@@ -9,9 +9,20 @@ const admin = require('firebase-admin');
 // Initialize Firebase Admin (Required for secure backend credit updates!)
 // WARNING: Locally this requires serviceAccountKey.json.
 try {
-    admin.initializeApp();
+    if (process.env.FIREBASE_PROJECT_ID) {
+        admin.initializeApp({
+            projectId: process.env.FIREBASE_PROJECT_ID
+        });
+        console.log("Firebase Admin initialized for project:", process.env.FIREBASE_PROJECT_ID);
+    } else {
+        admin.initializeApp();
+    }
 } catch (e) {
-    console.warn("Firebase Admin local init skipped. You will need a service account JSON for local webhooks.");
+    if (e.code === 'app/duplicate-app') {
+        console.log("Firebase Admin already initialized.");
+    } else {
+        console.error("Firebase Admin Init Error:", e.message);
+    }
 }
 
 const app = express();
@@ -145,7 +156,10 @@ app.post('/api/generate', async (req, res) => {
             }
         } catch (e) {
             console.error("Credit deduction failed:", e);
-            return res.status(500).json({ error: "Database error during credit verification." });
+            return res.status(500).json({
+                error: "Database error during credit verification.",
+                details: e.message
+            });
         }
         // -------------------------------
 
