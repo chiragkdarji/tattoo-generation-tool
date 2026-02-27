@@ -27,11 +27,18 @@ body {
   font-family: 'Inter', sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  height: 100vh;
+  min-height: 100vh;
   margin: 0;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* Allow scrolling on mobile by default, but hide on desktop if needed */
+@media (min-width: 769px) {
+  body {
+    height: 100vh;
+    overflow: hidden;
+  }
 }
 
 /* Layout Setup */
@@ -39,7 +46,12 @@ body {
   display: flex;
   width: 100%;
   flex: 1;
-  overflow: hidden;
+}
+
+@media (min-width: 769px) {
+  .app-container {
+    overflow: hidden;
+  }
 }
 
 .top-nav-bar {
@@ -319,21 +331,6 @@ img#generated-image {
 
   100% {
     transform: rotate(360deg);
-  }
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .app-container {
-    flex-direction: column;
-  }
-
-  .controls-panel {
-    width: 100%;
-    min-width: unset;
-    height: 50vh;
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
   }
 }
 
@@ -631,4 +628,95 @@ img#generated-image {
 
 .close-modal:hover {
   color: #fff;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+  .top-nav-bar {
+    height: auto;
+    padding: 16px;
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .brand-info h1 {
+    font-size: 20px;
+  }
+
+  .user-bar {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .app-container {
+    flex-direction: column;
+  }
+
+  .controls-panel {
+    width: 100%;
+    min-width: 100% !important;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: none;
+    overflow-y: visible;
+  }
+
+  .preview-panel {
+    padding: 24px 16px;
+    overflow-y: visible;
+    min-height: 50vh;
+  }
+
+  #image-container {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .login-overlay {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .login-left {
+    padding: 32px 20px;
+    min-height: auto;
+    width: 100%;
+    flex: none;
+  }
+
+  .login-right {
+    display: none !important;
+    /* Hide hero images on mobile to focus on login */
+  }
+
+  .login-title {
+    font-size: 2.5rem;
+    text-align: center;
+  }
+
+  .login-subtitle {
+    font-size: 1rem;
+    text-align: center;
+
+    br {
+      display: none;
+    }
+  }
+
+  .login-btn-container {
+    align-items: center;
+  }
+
+  .login-content {
+    text-align: center;
+  }
+
+  .history-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+  }
 }
