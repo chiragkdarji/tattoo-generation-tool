@@ -1,9 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js";
 import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp, doc, updateDoc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-let app, auth, provider, storage, db;
+let app, auth, googleProvider, appleProvider, storage, db;
 
 // SETUP: Change this to your live Render backend URL after deployment!
 const BACKEND_URL = "https://tattoo-generation-tool.onrender.com"; // e.g., "https://tattoo-backend-xxx.onrender.com"
@@ -14,7 +14,8 @@ const { firebaseConfig } = await configResponse.json();
 
 app = initializeApp(firebaseConfig);
 auth = getAuth(app);
-provider = new GoogleAuthProvider();
+googleProvider = new GoogleAuthProvider();
+appleProvider = new OAuthProvider('apple.com');
 storage = getStorage(app);
 db = getFirestore(app);
 
@@ -399,14 +400,26 @@ const userBar = document.getElementById('user-bar');
 const userEmail = document.getElementById('user-email');
 const userAvatar = document.getElementById('user-avatar');
 
-// Login Event
+// Login Events
+const appleLoginBtn = document.getElementById('apple-login-btn');
+
 loginBtn.addEventListener('click', async () => {
     try {
-        await signInWithPopup(auth, provider);
+        await signInWithPopup(auth, googleProvider);
     } catch (error) {
-        console.error("Login Error:", error);
+        console.error("Login Error (Google):", error);
     }
 });
+
+if (appleLoginBtn) {
+    appleLoginBtn.addEventListener('click', async () => {
+        try {
+            await signInWithPopup(auth, appleProvider);
+        } catch (error) {
+            console.error("Login Error (Apple):", error);
+        }
+    });
+}
 
 // Buy Credits Event (Stripe Checkout)
 document.getElementById('buy-credits-btn').addEventListener('click', async () => {
