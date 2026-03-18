@@ -4,7 +4,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tattoo Suggest</title>
+
+    <!-- Primary SEO -->
+    <title>Tattoo Suggest – AI Tattoo Design & Stencil Generator</title>
+    <meta name="description" content="Generate hyper-realistic AI tattoo mockups in seconds. Choose your style, placement, and subject — Tattoo Suggest creates a custom design and a print-ready 2D stencil for your tattoo artist.">
+    <meta name="keywords" content="AI tattoo generator, tattoo design generator, tattoo stencil generator, AI tattoo creator, custom tattoo designer, tattoo mockup, tattoo idea generator, tattoo stencil maker, AI tattoo art, realistic tattoo preview">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Tattoo Suggest">
+    <link rel="canonical" href="https://generate.tattoosuggest.com/">
+
+    <!-- Open Graph (Facebook, LinkedIn, AI crawlers) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://generate.tattoosuggest.com/">
+    <meta property="og:title" content="Tattoo Suggest – AI Tattoo Design & Stencil Generator">
+    <meta property="og:description" content="Design your perfect tattoo with AI. Select placement, style, and subject — get a hyper-realistic mockup and a 2D stencil your artist can use. Free to try.">
+    <meta property="og:image" content="https://generate.tattoosuggest.com/images/tattoo.png">
+    <meta property="og:site_name" content="Tattoo Suggest">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Tattoo Suggest – AI Tattoo Design & Stencil Generator">
+    <meta name="twitter:description" content="Design your perfect tattoo with AI. Hyper-realistic mockups + 2D stencils ready for your artist. Free to try.">
+    <meta name="twitter:image" content="https://generate.tattoosuggest.com/images/tattoo.png">
+
+    <!-- Structured Data: SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Tattoo Suggest",
+      "url": "https://generate.tattoosuggest.com/",
+      "description": "AI-powered tattoo design and stencil generator. Choose placement, style, subject, shading technique, and background to generate hyper-realistic tattoo mockups. Includes a 2D Stencil Creator for tattoo artists.",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free credits on sign-up. Additional credits available for purchase."
+      },
+      "featureList": [
+        "AI tattoo design generation",
+        "Hyper-realistic tattoo mockups on skin",
+        "2D tattoo stencil creator for artists",
+        "25+ tattoo styles including Blackwork, Realism, Watercolor, Japanese, Tribal",
+        "Custom placement selection",
+        "Downloadable high-resolution images"
+      ],
+      "screenshot": "https://generate.tattoosuggest.com/images/tattoo.png",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Tattoo Suggest",
+        "url": "https://tattoosuggest.com"
+      }
+    }
+    </script>
+
+    <!-- Structured Data: FAQPage (boosts AI search / Google AI Overviews) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Tattoo Suggest?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Tattoo Suggest is a free AI tattoo design generator that creates hyper-realistic tattoo mockups on human skin. Users select their desired placement, style, subject, shading technique, and background, and the AI produces a custom tattoo image within seconds."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the AI tattoo generator work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Select your tattoo options using the guided form — placement (e.g. forearm, neck), style (e.g. blackwork, realism, watercolor), primary subject, shading technique, and background environment. The tool assembles a detailed prompt and sends it to a Gemini AI image model, returning a photorealistic tattoo mockup on skin in seconds."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I get a tattoo stencil for my artist?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Tattoo Suggest includes a 2D Stencil Creator feature. After generating your tattoo mockup, click 'Download Stencil' to receive a flat, black-and-white line art version of the design — unwrapped from the skin and ready for your tattoo artist to use as a transfer stencil."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What tattoo styles does Tattoo Suggest support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Tattoo Suggest supports over 25 styles including Blackwork, Fine-line, Realism (Black & Grey and Color), Watercolor, Neo-traditional, Old School/Traditional, Japanese (Irezumi), Tribal (Maori, Polynesian), Geometric, Mandala, Anime/Manga, and more."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Tattoo Suggest free to use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Tattoo Suggest is free to try — new users receive free credits upon signing in with Google. Each tattoo generation costs 50 credits. Additional credit packs are available for purchase when you run out."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What body placements can I design a tattoo for?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Tattoo Suggest supports all major body placements including forearm (inner, outer, wrist, full wrap), upper arm (bicep, shoulder cap, tricep), torso (collarbone, sternum, side ribs, full back, spine, stomach), legs (thigh, shin, calf, ankle, knee), hands, feet, fingers, and neck (side, nape, behind the ear)."
+          }
+        }
+      ]
+    }
+    </script>
+
     <link rel="icon" type="image/gif" href="images/rocket.gif">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,7 +130,7 @@
     <div id="login-overlay" class="login-overlay">
         <div class="login-left">
             <div class="login-content">
-                <h2 class="login-title">Ink your<br>vision with AI.</h2>
+                <h1 class="login-title">Ink your<br>vision with AI.</h1>
                 <p class="login-subtitle">Sign in to create premium tattoos & unlock<br>the instant 2D Stencil Creator.
                 </p>
 
