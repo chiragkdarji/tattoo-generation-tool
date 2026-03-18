@@ -13,8 +13,14 @@
   --border-radius-sm: 8px;
   --border-radius-md: 12px;
   --border-radius-lg: 16px;
+  --border-radius-pill: 9999px;
 
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  --navbar-height: 70px;
+  --controls-width: 400px;
+  --login-title-size: 4.5rem;
+  --spinner-duration: 1s;
 }
 
 * {
@@ -59,7 +65,7 @@ body {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  height: 70px;
+  height: var(--navbar-height);
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   padding: 0 24px;
@@ -71,6 +77,7 @@ body {
   font-weight: 700;
   background: linear-gradient(135deg, #FFF, #a5b4fc);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 2px;
 }
@@ -81,8 +88,8 @@ body {
 }
 
 .controls-panel {
-  width: 400px;
-  min-width: 400px;
+  width: var(--controls-width);
+  min-width: var(--controls-width);
   background-color: var(--bg-secondary);
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -99,6 +106,7 @@ header h1 {
   font-weight: 700;
   background: linear-gradient(135deg, #FFF, #a5b4fc);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 4px;
 }
@@ -317,7 +325,7 @@ img#generated-image {
   border-bottom-color: #fff;
   border-radius: 50%;
   display: inline-block;
-  animation: rotation 1s linear infinite;
+  animation: rotation var(--spinner-duration) linear infinite;
 }
 
 .loader.hidden {
@@ -381,7 +389,7 @@ img#generated-image {
 
 .login-title {
   font-family: inherit;
-  font-size: 4.5rem;
+  font-size: var(--login-title-size);
   font-weight: 800;
   line-height: 1.1;
   margin-top: 0;
@@ -414,8 +422,7 @@ img#generated-image {
   font-weight: 600 !important;
   font-size: 1.05rem !important;
   padding: 14px 28px !important;
-  border-radius: 9999px !important;
-  /* Pill shape */
+  border-radius: var(--border-radius-pill) !important;
   width: fit-content;
   min-width: 250px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -428,24 +435,6 @@ img#generated-image {
   box-shadow: 0 4px 15px rgba(255, 255, 255, 0.15) !important;
 }
 
-.login-alt {
-  margin-top: 16px;
-  font-size: 0.9rem;
-  color: #9CA3AF;
-  width: 250px;
-  text-align: center;
-}
-
-.login-alt a {
-  color: #6B7280;
-  text-decoration: underline;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.login-alt a:hover {
-  color: #9CA3AF;
-}
 
 .google-icon {
   width: 24px;
@@ -489,7 +478,7 @@ img#generated-image {
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   padding: 4px 12px;
-  border-radius: 999px;
+  border-radius: var(--border-radius-pill);
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--accent-color);

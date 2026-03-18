@@ -1,12 +1,16 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js";
-import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp, doc, updateDoc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp, doc, updateDoc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 let app, auth, provider, storage, db;
 
-// SETUP: Change this to your live Render backend URL after deployment!
-const BACKEND_URL = "https://tattoo-generation-tool.onrender.com"; // e.g., "https://tattoo-backend-xxx.onrender.com"
+const BACKEND_URL = "https://tattoo-generation-tool.onrender.com";
+
+// --- Constants ---
+const CREDITS_PER_GENERATION = 50;
+const BLOB_REVOKE_DELAY_MS = 2000;
+const AUTH_OVERLAY_FADE_MS = 300;
 
 // Fetch config securely from backend env
 const configResponse = await fetch(`${BACKEND_URL}/api/config`);
@@ -19,6 +23,7 @@ storage = getStorage(app);
 db = getFirestore(app);
 
 let currentUser = null;
+let userCredits = 0;
 
 const categories = {
     placement: [
@@ -97,14 +102,77 @@ let currentBlobUrl = null;
 let currentDocumentId = null;
 let currentStencilUrl = null;
 let unsubscribeCredits = null;
-window.userCredits = 0;
+
+// --- Utilities ---
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function showError(message) {
+    alert(message);
+}
+
+function downloadBlob(blobUrl, filename) {
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+// --- Prompt Logic ---
+
+function getFormValues() {
+    let subject = document.getElementById('subject').value || null;
+    if (subject && subject.includes('Custom') && subjectDetail.value) {
+        subject = subject.replace('(Custom)', `(${subjectDetail.value})`);
+    }
+
+    let elements = document.getElementById('elements').value || null;
+    if (elements && elements.includes('Custom') && elementsDetail.value) {
+        elements = elements.replace('(Custom)', `(${elementsDetail.value})`);
+    } else if (elements && elements.includes('Script') && elementsDetail.value) {
+        elements += ` - "${elementsDetail.value}"`;
+    }
+
+    return {
+        placement: document.getElementById('placement').value || null,
+        style: document.getElementById('style').value || null,
+        subject,
+        elements,
+        shading: document.getElementById('shading').value || null,
+        background: document.getElementById('background').value || null,
+        aspectRatio: document.getElementById('aspectRatio').value || "1:1"
+    };
+}
+
+function buildPromptText(values) {
+    const { placement, style, subject, elements, shading, background } = values;
+    const p = placement || '[PLACEMENT]';
+    const st = style || '[STYLE]';
+    const sub = subject || '[PRIMARY SUBJECT]';
+    const sh = shading || '[SHADING TECHNIQUE]';
+    const bg = background || '[BACKGROUND]';
+
+    const elementsPart = (elements && elements !== 'None')
+        ? `integrated with [SECONDARY ELEMENTS: ${elements}]`
+        : '';
+
+    return `A high-resolution, professional studio photography shot of a [PLACEMENT: ${p}] tattoo. The design is a [STYLE: ${st}] composition featuring [PRIMARY SUBJECT: ${sub}] ${elementsPart}. The tattoo features [SHADING TECHNIQUE: ${sh}] and exceptionally clean, sharp linework. The skin texture is realistic, against a [BACKGROUND: ${bg}] backdrop.`;
+}
 
 // Populate dropdowns
 function populateSelects() {
     ['placement', 'style', 'subject', 'elements', 'shading', 'background', 'aspectRatio'].forEach(id => {
         const select = document.getElementById(id);
 
-        // Default Option
         const defaultOption = document.createElement('option');
         defaultOption.value = "";
         defaultOption.text = `Select ${id.charAt(0).toUpperCase() + id.slice(1)}`;
@@ -119,7 +187,6 @@ function populateSelects() {
             select.appendChild(option);
         });
 
-        // Add change listeners
         select.addEventListener('change', handleSelectChange);
     });
 }
@@ -128,115 +195,76 @@ function handleSelectChange(e) {
     const id = e.target.id;
     const value = e.target.value;
 
-    // Show custom inputs if required
     if (id === 'subject') {
-        if (value.includes('(Custom)')) {
-            subjectDetail.classList.add('active');
-            subjectDetail.required = true;
-        } else {
-            subjectDetail.classList.remove('active');
-            subjectDetail.required = false;
-        }
+        const isCustom = value.includes('(Custom)');
+        subjectDetail.classList.toggle('active', isCustom);
+        subjectDetail.required = isCustom;
     }
 
     if (id === 'elements') {
-        if (value.includes('Integrated Script') || value.includes('(Custom)')) {
-            elementsDetail.classList.add('active');
-            elementsDetail.required = true;
-        } else {
-            elementsDetail.classList.remove('active');
-            elementsDetail.required = false;
-        }
+        const needsDetail = value.includes('Integrated Script') || value.includes('(Custom)');
+        elementsDetail.classList.toggle('active', needsDetail);
+        elementsDetail.required = needsDetail;
     }
 
     updatePromptPreview();
 }
 
 function updatePromptPreview() {
-    // Generate text internally as users select
-    const p = document.getElementById('placement').value || "[PLACEMENT]";
-    const st = document.getElementById('style').value || "[STYLE]";
+    const values = getFormValues();
+    const p = escapeHtml(values.placement || '[PLACEMENT]');
+    const st = escapeHtml(values.style || '[STYLE]');
+    const sub = escapeHtml(values.subject || '[PRIMARY SUBJECT]');
+    const el = values.elements;
+    const sh = escapeHtml(values.shading || '[SHADING TECHNIQUE]');
+    const bg = escapeHtml(values.background || '[BACKGROUND]');
 
-    let sub = document.getElementById('subject').value || "[PRIMARY SUBJECT]";
-    if (sub.includes('Custom') && subjectDetail.value) {
-        sub = sub.replace('(Custom)', `(${subjectDetail.value})`);
-    }
-
-    let el = document.getElementById('elements').value || "[SECONDARY ELEMENTS]";
-    if (el.includes('Custom') && elementsDetail.value) {
-        el = el.replace('(Custom)', `(${elementsDetail.value})`);
-    } else if (el.includes('Script') && elementsDetail.value) {
-        el += ` - "${elementsDetail.value}"`;
-    }
-
-    const sh = document.getElementById('shading').value || "[SHADING TECHNIQUE]";
-    const bg = document.getElementById('background').value || "[BACKGROUND]";
-
-    let previewHtml = `A high-resolution, professional studio photography shot of a <strong>[FOREARM: ${p}]</strong> tattoo. 
+    let html = `A high-resolution, professional studio photography shot of a <strong>[PLACEMENT: ${p}]</strong> tattoo.
     The design is a <strong>[STYLE: ${st}]</strong> composition featuring <strong>[PRIMARY SUBJECT: ${sub}]</strong>`;
 
-    if (el !== "None" && el !== "[SECONDARY ELEMENTS]") {
-        previewHtml += ` integrated with <strong>[SECONDARY ELEMENTS: ${el}]</strong>. `;
+    if (el && el !== 'None') {
+        html += ` integrated with <strong>[SECONDARY ELEMENTS: ${escapeHtml(el)}]</strong>. `;
     } else {
-        previewHtml += `. `;
+        html += `. `;
     }
 
-    previewHtml += `The tattoo features <strong>[SHADING TECHNIQUE: ${sh}]</strong> and exceptionally clean, sharp linework. The skin texture is realistic, against a <strong>[BACKGROUND: ${bg}]</strong> backdrop.`;
+    html += `The tattoo features <strong>[SHADING TECHNIQUE: ${sh}]</strong> and exceptionally clean, sharp linework. The skin texture is realistic, against a <strong>[BACKGROUND: ${bg}]</strong> backdrop.`;
 
-    promptOutput.innerHTML = previewHtml;
+    promptOutput.innerHTML = html;
 }
 
-// Add input listener for real-time prompt updating on typing
+// Add input listeners for real-time prompt updating
 subjectDetail.addEventListener('input', updatePromptPreview);
 elementsDetail.addEventListener('input', updatePromptPreview);
 
 // Generate Submission
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    // Assemble final text
-    const p = document.getElementById('placement').value;
-    const st = document.getElementById('style').value;
-
-    let sub = document.getElementById('subject').value;
-    if (sub.includes('Custom')) sub = sub.replace('(Custom)', `(${subjectDetail.value})`);
-
-    let el = document.getElementById('elements').value;
-    if (el.includes('Custom')) el = el.replace('(Custom)', `(${elementsDetail.value})`);
-    else if (el.includes('Script')) el += ` - "${elementsDetail.value}"`;
-
-    const sh = document.getElementById('shading').value;
-    const bg = document.getElementById('background').value;
-    const aspect = document.getElementById('aspectRatio').value || "1:1";
-
-    const fullPrompt = `A high-resolution, professional studio photography shot of a [PLACEMENT: ${p}] tattoo. The design is a [STYLE: ${st}] composition featuring [PRIMARY SUBJECT: ${sub}] ${el !== 'None' ? 'integrated with [SECONDARY ELEMENTS: ' + el + ']' : ''}. The tattoo features [SHADING TECHNIQUE: ${sh}] and exceptionally clean, sharp linework. The skin texture is realistic, against a [BACKGROUND: ${bg}] backdrop.`;
-
-    generateImage(fullPrompt, aspect);
+    const values = getFormValues();
+    generateImage(buildPromptText(values), values.aspectRatio);
 });
 
 async function generateImage(prompt, aspect) {
-    if (window.userCredits < 50) {
-        alert("Not enough credits! You need 50 credits to generate a new tattoo.");
+    if (userCredits < CREDITS_PER_GENERATION) {
+        showError(`Not enough credits! You need ${CREDITS_PER_GENERATION} credits to generate a new tattoo.`);
         return;
     }
 
-    // UI State Loading
     generateBtn.disabled = true;
     btnText.textContent = "Generating...";
     loader.classList.remove('hidden');
 
     try {
-        // REPLACE THE URL with your actual backend Hostinger URL once deployed!
-        // Local testing assumes backend runs on port 3000
-        const backendUrl = `${BACKEND_URL}/api/generate`;
+        const idToken = await currentUser.getIdToken();
 
-        const response = await fetch(backendUrl, {
+        const response = await fetch(`${BACKEND_URL}/api/generate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                prompt: prompt,
+                prompt,
                 aspect_ratio: aspect,
-                userId: currentUser.uid // Pass user ID for backend credit check
+                userId: currentUser.uid,
+                idToken
             })
         });
 
@@ -246,25 +274,18 @@ async function generateImage(prompt, aspect) {
             throw new Error(message);
         }
 
-        // Ensure we handle image as a Blob directly
         const imageBlob = await response.blob();
 
-        // Release previous URL to prevent memory leaks
         if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
         currentBlobUrl = URL.createObjectURL(imageBlob);
 
-        // Update UI Image
         generatedImage.src = currentBlobUrl;
         generatedImage.classList.remove('hidden');
         placeholderContent.classList.add('hidden');
-
-        // Update container's aspect ratio to match the generated image ratio exactly
         imageContainer.style.aspectRatio = aspect.replace(':', '/');
         imageContainer.classList.add('has-image');
-
         actionsPanel.classList.remove('hidden');
 
-        // Save History
         currentDocumentId = null;
         currentStencilUrl = null;
         if (currentUser) {
@@ -272,7 +293,7 @@ async function generateImage(prompt, aspect) {
         }
 
     } catch (error) {
-        alert("Error Generating Image! Ensure your local backend is running! Details: " + error.message);
+        showError("Error generating image: " + error.message);
         console.error(error);
     } finally {
         generateBtn.disabled = false;
@@ -284,18 +305,12 @@ async function generateImage(prompt, aspect) {
 // Download controls
 document.getElementById('download-btn').addEventListener('click', () => {
     if (!currentBlobUrl) return;
-    const a = document.createElement('a');
-    a.href = currentBlobUrl;
-    a.download = `tattoo-mockup-${Date.now()}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    downloadBlob(currentBlobUrl, `tattoo-mockup-${Date.now()}.png`);
 });
 
 document.getElementById('stencil-btn').addEventListener('click', async () => {
     if (!currentBlobUrl) return;
 
-    // UI Loading state for Stencil button
     const stencilBtn = document.getElementById('stencil-btn');
     const originalText = stencilBtn.textContent;
     stencilBtn.textContent = "Processing...";
@@ -303,84 +318,59 @@ document.getElementById('stencil-btn').addEventListener('click', async () => {
 
     try {
         if (currentStencilUrl) {
-            // Already generated and saved previously! Use the proxy to avoid CORS
+            // Already generated — re-download via proxy to avoid CORS
             const proxyUrl = `${BACKEND_URL}/api/proxy-image?url=${encodeURIComponent(currentStencilUrl)}`;
             const cachedResponse = await fetch(proxyUrl);
             if (!cachedResponse.ok) throw new Error("Proxy request failed");
 
-            const cachedBlob = await cachedResponse.blob();
-            const cachedBlobUrl = URL.createObjectURL(cachedBlob);
-
-            const a = document.createElement('a');
-            a.href = cachedBlobUrl;
-            a.download = `tattoo-stencil-${Date.now()}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-
-            // Wait a full 2 seconds before revoking to prevent browser download silent failures!
-            setTimeout(() => URL.revokeObjectURL(cachedBlobUrl), 2000);
-
-            // Re-enable button manually since we are returning early
-            stencilBtn.textContent = originalText;
-            stencilBtn.disabled = false;
+            const cachedBlobUrl = URL.createObjectURL(await cachedResponse.blob());
+            downloadBlob(cachedBlobUrl, `tattoo-stencil-${Date.now()}.png`);
+            setTimeout(() => URL.revokeObjectURL(cachedBlobUrl), BLOB_REVOKE_DELAY_MS);
             return;
         }
 
-        // Convert the current blob URL to base64 so we can send it to our backend
-        const responseBlob = await fetch(currentBlobUrl);
-        const blob = await responseBlob.blob();
-
+        // Convert current blob URL to base64 for backend
+        const blob = await (await fetch(currentBlobUrl)).blob();
         const base64data = await new Promise((resolve) => {
             const reader = new FileReader();
             reader.readAsDataURL(blob);
             reader.onloadend = () => resolve(reader.result);
         });
 
-        // Call our new Stencil Gen backend route
-        const backendUrl = `${BACKEND_URL}/api/stencil`;
+        const idToken = currentUser ? await currentUser.getIdToken() : null;
 
-        const stencilResponse = await fetch(backendUrl, {
+        const stencilResponse = await fetch(`${BACKEND_URL}/api/stencil`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageBase64: base64data })
+            body: JSON.stringify({
+                imageBase64: base64data,
+                userId: currentUser?.uid,
+                idToken
+            })
         });
 
         if (!stencilResponse.ok) {
             throw new Error('Failed to generate stencil');
         }
 
-        // Download the returned stencil image
         const stencilBlob = await stencilResponse.blob();
-        const stencilUrl = URL.createObjectURL(stencilBlob);
+        const stencilBlobUrl = URL.createObjectURL(stencilBlob);
+        downloadBlob(stencilBlobUrl, `tattoo-stencil-${Date.now()}.png`);
+        setTimeout(() => URL.revokeObjectURL(stencilBlobUrl), BLOB_REVOKE_DELAY_MS);
 
-        const a = document.createElement('a');
-        a.href = stencilUrl;
-        a.download = `tattoo-stencil-${Date.now()}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-
-        // Cleanup local ref memory leak safely
-        setTimeout(() => URL.revokeObjectURL(stencilUrl), 2000);
-
-        // Permanently cache Stencil DB Link to Google Cloud
+        // Save stencil URL to Firebase Storage
         if (currentUser && currentDocumentId && !currentStencilUrl) {
-            const timestamp = Date.now();
-            const filename = `stencils/${currentUser.uid}/${timestamp}.png`;
-            const sRef = storageRef(storage, filename);
-            const snapshot = await uploadBytes(sRef, stencilBlob);
+            const storageReference = storageRef(storage, `stencils/${currentUser.uid}/${Date.now()}.png`);
+            const snapshot = await uploadBytes(storageReference, stencilBlob);
             const downloadUrl = await getDownloadURL(snapshot.ref);
 
-            await updateDoc(doc(db, "tattoos", currentDocumentId), {
-                stencilUrl: downloadUrl
-            });
+            await updateDoc(doc(db, "tattoos", currentDocumentId), { stencilUrl: downloadUrl });
             currentStencilUrl = downloadUrl;
         }
 
     } catch (error) {
         console.error("Stencil Error:", error);
-        alert("Failed to process the stencil. See console for details.");
+        showError("Failed to process the stencil. See console for details.");
     } finally {
         stencilBtn.textContent = originalText;
         stencilBtn.disabled = false;
@@ -399,7 +389,6 @@ const userBar = document.getElementById('user-bar');
 const userEmail = document.getElementById('user-email');
 const userAvatar = document.getElementById('user-avatar');
 
-// Login Event
 loginBtn.addEventListener('click', async () => {
     try {
         await signInWithPopup(auth, provider);
@@ -408,11 +397,9 @@ loginBtn.addEventListener('click', async () => {
     }
 });
 
-// Buy Credits Event (Stripe Checkout)
 document.getElementById('buy-credits-btn').addEventListener('click', async () => {
     if (!currentUser) return;
 
-    // Add loading state
     const buyBtn = document.getElementById('buy-credits-btn');
     const originalText = buyBtn.textContent;
     buyBtn.textContent = "Loading...";
@@ -427,20 +414,19 @@ document.getElementById('buy-credits-btn').addEventListener('click', async () =>
 
         const data = await response.json();
         if (data.url) {
-            window.location.href = data.url; // Redirect to Stripe
+            window.location.href = data.url;
         } else {
             throw new Error("Missing checkout URL");
         }
     } catch (e) {
         console.error("Checkout Error:", e);
-        alert("Failed to initialize secure checkout. Please try again.");
+        showError("Failed to initialize secure checkout. Please try again.");
     } finally {
         buyBtn.textContent = originalText;
         buyBtn.disabled = false;
     }
 });
 
-// Logout Event
 logoutBtn.addEventListener('click', async () => {
     try {
         await signOut(auth);
@@ -449,30 +435,25 @@ logoutBtn.addEventListener('click', async () => {
     }
 });
 
-// Auth State Listener
 onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if (user) {
-        // Init Credit Wallet
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         if (!userSnap.exists()) {
             await setDoc(userRef, { credits: 500, email: user.email });
         }
 
-        // Listen to Credit changes live 
         if (unsubscribeCredits) unsubscribeCredits();
         unsubscribeCredits = onSnapshot(userRef, (snapshot) => {
             if (snapshot.exists()) {
-                const data = snapshot.data();
-                window.userCredits = data.credits;
-                document.getElementById('credit-amount').textContent = `${data.credits} Credits`;
+                userCredits = snapshot.data().credits;
+                document.getElementById('credit-amount').textContent = `${userCredits} Credits`;
             }
         });
 
-        // User is logged in! Hide the overlay wrapper smoothly
         loginOverlay.style.opacity = '0';
-        setTimeout(() => loginOverlay.classList.add('hidden'), 300);
+        setTimeout(() => loginOverlay.classList.add('hidden'), AUTH_OVERLAY_FADE_MS);
 
         userBar.classList.remove('hidden');
         userEmail.textContent = user.email;
@@ -483,13 +464,11 @@ onAuthStateChanged(auth, async (user) => {
 
         loadUserHistory(user.uid);
     } else {
-        // User logged out! Bring the wall back up.
         if (unsubscribeCredits) {
             unsubscribeCredits();
             unsubscribeCredits = null;
         }
 
-        // Clean up URL parameters if user cancels stripe or logs out
         window.history.replaceState({}, document.title, "/");
 
         loginOverlay.classList.remove('hidden');
@@ -498,33 +477,27 @@ onAuthStateChanged(auth, async (user) => {
         userBar.classList.add('hidden');
         userAvatar.classList.add('hidden');
 
-        // Clear History UI
         document.getElementById('history-panel').classList.add('hidden');
         document.getElementById('history-grid').innerHTML = '';
     }
 });
 
-// --- History Logic ---
+/* --- History Logic --- */
 
 async function saveTattooToHistory(uid, blob, prompt, aspect) {
     try {
-        const timestamp = Date.now();
-        const filename = `tattoos/${uid}/${timestamp}.png`;
-        const sRef = storageRef(storage, filename);
-
-        // Upload Blob manually
-        const snapshot = await uploadBytes(sRef, blob);
+        const storageReference = storageRef(storage, `tattoos/${uid}/${Date.now()}.png`);
+        const snapshot = await uploadBytes(storageReference, blob);
         const downloadUrl = await getDownloadURL(snapshot.ref);
 
         const docRef = await addDoc(collection(db, "tattoos"), {
-            uid: uid,
+            uid,
             imageUrl: downloadUrl,
-            prompt: prompt,
-            aspect: aspect,
+            prompt,
+            aspect,
             createdAt: serverTimestamp()
         });
 
-        // reload history after saving
         loadUserHistory(uid);
         return docRef.id;
     } catch (e) {
@@ -541,7 +514,7 @@ async function loadUserHistory(uid) {
         const q = query(collection(db, "tattoos"), where("uid", "==", uid));
         const snapshot = await getDocs(q);
 
-        historyGrid.innerHTML = ''; // clear loading state
+        historyGrid.innerHTML = '';
 
         if (snapshot.empty) {
             historyPanel.classList.add('hidden');
@@ -550,32 +523,25 @@ async function loadUserHistory(uid) {
 
         historyPanel.classList.remove('hidden');
 
-        // Extract and sort manually to avoid requiring an active composite index in Firestore
-        const docsArray = [];
-        snapshot.forEach(doc => docsArray.push({ id: doc.id, ...doc.data() }));
-        docsArray.sort((a, b) => {
+        // Sort manually to avoid requiring a Firestore composite index
+        const historyDocs = [];
+        snapshot.forEach(d => historyDocs.push({ id: d.id, ...d.data() }));
+        historyDocs.sort((a, b) => {
             const timeA = a.createdAt ? a.createdAt.toMillis() : 0;
             const timeB = b.createdAt ? b.createdAt.toMillis() : 0;
             return timeB - timeA;
         });
 
-        docsArray.forEach((data) => {
+        historyDocs.forEach((data) => {
             const img = document.createElement('img');
             img.src = data.imageUrl;
             img.className = 'history-item';
             img.title = "Click to load to editing board";
 
-            // Allow user to click history to view it in main stage
             img.addEventListener('click', async () => {
                 currentDocumentId = data.id || null;
                 currentStencilUrl = data.stencilUrl || null;
 
-                const generatedImage = document.getElementById('generated-image');
-                const placeholderContent = document.querySelector('.placeholder-content');
-                const imageContainer = document.getElementById('image-container');
-                const actionsPanel = document.getElementById('action-buttons');
-
-                // Show in Main Area
                 generatedImage.src = data.imageUrl;
                 generatedImage.classList.remove('hidden');
                 placeholderContent.classList.add('hidden');
@@ -583,8 +549,7 @@ async function loadUserHistory(uid) {
                 imageContainer.classList.add('has-image');
                 actionsPanel.classList.remove('hidden');
 
-                // VERY IMPORTANT: Convert external Firebase URL back to a Blob URL
-                // So that our C++ Stencil filter proxy or standard download link works flawlessly without CORS blocks!
+                // Convert Firebase URL to local Blob URL to avoid CORS issues on download/stencil
                 try {
                     const proxyUrl = `${BACKEND_URL}/api/proxy-image?url=${encodeURIComponent(data.imageUrl)}`;
                     const historyResponse = await fetch(proxyUrl);
@@ -594,8 +559,8 @@ async function loadUserHistory(uid) {
                     if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
                     currentBlobUrl = URL.createObjectURL(historyBlob);
                 } catch (e) {
-                    console.error("Failed to map history URL to Local Blob for download tools", e);
-                    currentBlobUrl = data.imageUrl; // Fallback
+                    console.error("Failed to map history URL to local Blob", e);
+                    currentBlobUrl = data.imageUrl;
                 }
             });
 
@@ -603,30 +568,22 @@ async function loadUserHistory(uid) {
         });
     } catch (e) {
         console.error("Failed to load history", e);
-        // It's possible we need a Firestore Index for uid + orderBy createdAt
         if (e.message.includes("requires an index")) {
-            console.warn("Firestore needs an index creation! Check console link:", e.message);
+            console.warn("Firestore needs an index! Check console link:", e.message);
         }
     }
 }
 
-// Support Modal Logic
+/* --- Support Modal Logic --- */
+
 const supportBtn = document.getElementById('support-btn');
 const supportModal = document.getElementById('support-modal');
 const closeModal = document.querySelector('.close-modal');
 
 if (supportBtn && supportModal && closeModal) {
-    supportBtn.addEventListener('click', () => {
-        supportModal.classList.remove('hidden');
-    });
-
-    closeModal.addEventListener('click', () => {
-        supportModal.classList.add('hidden');
-    });
-
+    supportBtn.addEventListener('click', () => supportModal.classList.remove('hidden'));
+    closeModal.addEventListener('click', () => supportModal.classList.add('hidden'));
     window.addEventListener('click', (event) => {
-        if (event.target === supportModal) {
-            supportModal.classList.add('hidden');
-        }
+        if (event.target === supportModal) supportModal.classList.add('hidden');
     });
 }
