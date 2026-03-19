@@ -383,11 +383,10 @@ loadLoginGallery();
 
 /* --- Login Gallery --- */
 
-async function loadLoginGallery() {
+function loadLoginGallery() {
     const track = document.getElementById('login-gallery-track');
     if (!track) return;
 
-    // Static fallback images (always available)
     const placeholders = [
         'hero-tattoo.jpg',
         'images/tattoo.png',
@@ -398,21 +397,24 @@ async function loadLoginGallery() {
         'images/stencil.png',
     ];
 
-    let images = [];
+    // Render placeholders immediately — no async wait
+    renderLoginGallery(track, placeholders);
 
-    try {
-        // Attempt to load latest public tattoos — requires Firestore rules to allow collection reads
-        const q = query(collection(db, "tattoos"), orderBy("createdAt", "desc"), limit(8));
-        const snapshot = await getDocs(q);
-        snapshot.forEach(d => {
-            if (d.data().imageUrl) images.push(d.data().imageUrl);
-        });
-    } catch {
-        // Silently fall back to placeholders if Firestore denies unauthenticated reads
-    }
+    // Attempt to swap in real tattoo images if Firestore allows unauthenticated reads
+    (async () => {
+        try {
+            const q = query(collection(db, "tattoos"), orderBy("createdAt", "desc"), limit(8));
+            const snapshot = await getDocs(q);
+            const images = [];
+            snapshot.forEach(d => { if (d.data().imageUrl) images.push(d.data().imageUrl); });
+            if (images.length >= 3) renderLoginGallery(track, images);
+        } catch (e) {
+            // Keep placeholders — Firestore may deny unauthenticated reads
+        }
+    })();
+}
 
-    if (images.length < 3) images = placeholders;
-
+function renderLoginGallery(track, images) {
     const count = Math.min(images.length, 7);
     const centerIdx = Math.floor(count / 2);
 
@@ -426,7 +428,6 @@ async function loadLoginGallery() {
         const img = document.createElement('img');
         img.src = src;
         img.alt = 'AI Generated Tattoo';
-        img.loading = 'lazy';
 
         card.appendChild(img);
         track.appendChild(card);
