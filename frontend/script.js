@@ -390,8 +390,7 @@ loadLoginGallery();
 /* --- Login Gallery --- */
 
 function loadLoginGallery() {
-    // Placeholders already rendered by inline script in HTML.
-    // Swap in real tattoo images from Firestore (primary) or Storage listing (fallback).
+    // Load real tattoo images from Firestore (primary) or Storage listing (fallback).
     const track = document.getElementById('login-gallery-track');
     if (!track) return;
 

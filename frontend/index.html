@@ -303,29 +303,6 @@
         </div>
     </div>
 
-    <!-- Inline gallery: renders immediately, before the module script loads -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var placeholders = [
-                'hero-tattoo.jpg', 'images/tattoo.png', 'images/stencil.png',
-                'hero-stencil.png', 'hero-tattoo.jpg', 'images/tattoo.png', 'images/stencil.png'
-            ];
-            var track = document.getElementById('login-gallery-track');
-            if (!track) return;
-            var centerIdx = Math.floor(placeholders.length / 2);
-            placeholders.forEach(function (src, i) {
-                var diff = Math.abs(i - centerIdx);
-                var card = document.createElement('div');
-                card.className = 'gallery-card' + (diff === 0 ? ' gallery-pos-0' : diff === 1 ? ' gallery-pos-1' : '');
-                var img = document.createElement('img');
-                img.src = src;
-                img.alt = 'AI Generated Tattoo';
-                card.appendChild(img);
-                track.appendChild(card);
-            });
-        });
-    </script>
-
     <script type="module" src="script.js"></script>
 </body>
 
