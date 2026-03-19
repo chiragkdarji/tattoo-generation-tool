@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, listAll } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js";
 import { getFirestore, collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp, doc, updateDoc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 let app, auth, provider, storage, db;
@@ -391,11 +391,12 @@ loadLoginGallery();
 
 function loadLoginGallery() {
     // Placeholders already rendered by inline script in HTML.
-    // Swap in real tattoo images from Firestore as soon as any are available.
+    // Swap in real tattoo images from Firestore (primary) or Storage listing (fallback).
     const track = document.getElementById('login-gallery-track');
     if (!track) return;
 
     (async () => {
+        // Primary: Firestore query
         try {
             const q = query(collection(db, "tattoos"), orderBy("createdAt", "desc"), limit(7));
             const snapshot = await getDocs(q);
@@ -403,12 +404,33 @@ function loadLoginGallery() {
             snapshot.forEach(d => { if (d.data().imageUrl) real.push(d.data().imageUrl); });
 
             if (real.length > 0) {
-                // Repeat real images to fill all 7 gallery slots
                 const images = Array.from({ length: 7 }, (_, i) => real[i % real.length]);
+                renderLoginGallery(track, images);
+                return;
+            }
+        } catch (e) {
+            console.warn('Gallery: Firestore query failed, trying Storage listing', e);
+        }
+
+        // Fallback: list files directly from Firebase Storage
+        try {
+            const rootRef = storageRef(storage, 'tattoos/');
+            const rootList = await listAll(rootRef);
+            const urls = [];
+            for (const userFolder of rootList.prefixes) {
+                if (urls.length >= 7) break;
+                const folderList = await listAll(userFolder);
+                if (folderList.items.length > 0) {
+                    const url = await getDownloadURL(folderList.items[0]);
+                    urls.push(url);
+                }
+            }
+            if (urls.length > 0) {
+                const images = Array.from({ length: 7 }, (_, i) => urls[i % urls.length]);
                 renderLoginGallery(track, images);
             }
         } catch (e) {
-            // Keep placeholders — Firestore denied unauthenticated reads
+            console.warn('Gallery: Storage listing failed, keeping placeholders', e);
         }
     })();
 }
