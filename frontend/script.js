@@ -22,6 +22,12 @@ provider = new GoogleAuthProvider();
 storage = getStorage(app);
 db = getFirestore(app);
 
+// Backend is ready — enable the sign-in button and update its label
+const loginBtnEl = document.getElementById('google-login-btn');
+const loginBtnText = document.getElementById('login-btn-text');
+if (loginBtnEl) loginBtnEl.disabled = false;
+if (loginBtnText) loginBtnText.textContent = 'Sign in with Google';
+
 let currentUser = null;
 let userCredits = 0;
 
@@ -384,23 +390,11 @@ loadLoginGallery();
 /* --- Login Gallery --- */
 
 function loadLoginGallery() {
+    // Placeholders already rendered by inline script in HTML.
+    // Try to swap in real tattoo images from Firestore (public read rules required).
     const track = document.getElementById('login-gallery-track');
     if (!track) return;
 
-    const placeholders = [
-        'hero-tattoo.jpg',
-        'images/tattoo.png',
-        'images/stencil.png',
-        'hero-stencil.png',
-        'hero-tattoo.jpg',
-        'images/tattoo.png',
-        'images/stencil.png',
-    ];
-
-    // Render placeholders immediately — no async wait
-    renderLoginGallery(track, placeholders);
-
-    // Attempt to swap in real tattoo images if Firestore allows unauthenticated reads
     (async () => {
         try {
             const q = query(collection(db, "tattoos"), orderBy("createdAt", "desc"), limit(8));
@@ -409,7 +403,7 @@ function loadLoginGallery() {
             snapshot.forEach(d => { if (d.data().imageUrl) images.push(d.data().imageUrl); });
             if (images.length >= 3) renderLoginGallery(track, images);
         } catch (e) {
-            // Keep placeholders — Firestore may deny unauthenticated reads
+            // Keep placeholders — Firestore denied unauthenticated reads
         }
     })();
 }
