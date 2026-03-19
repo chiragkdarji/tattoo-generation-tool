@@ -391,17 +391,22 @@ loadLoginGallery();
 
 function loadLoginGallery() {
     // Placeholders already rendered by inline script in HTML.
-    // Try to swap in real tattoo images from Firestore (public read rules required).
+    // Swap in real tattoo images from Firestore as soon as any are available.
     const track = document.getElementById('login-gallery-track');
     if (!track) return;
 
     (async () => {
         try {
-            const q = query(collection(db, "tattoos"), orderBy("createdAt", "desc"), limit(8));
+            const q = query(collection(db, "tattoos"), orderBy("createdAt", "desc"), limit(7));
             const snapshot = await getDocs(q);
-            const images = [];
-            snapshot.forEach(d => { if (d.data().imageUrl) images.push(d.data().imageUrl); });
-            if (images.length >= 3) renderLoginGallery(track, images);
+            const real = [];
+            snapshot.forEach(d => { if (d.data().imageUrl) real.push(d.data().imageUrl); });
+
+            if (real.length > 0) {
+                // Repeat real images to fill all 7 gallery slots
+                const images = Array.from({ length: 7 }, (_, i) => real[i % real.length]);
+                renderLoginGallery(track, images);
+            }
         } catch (e) {
             // Keep placeholders — Firestore denied unauthenticated reads
         }
