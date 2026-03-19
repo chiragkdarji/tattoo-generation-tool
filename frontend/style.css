@@ -397,15 +397,15 @@ img#generated-image {
   position: relative;
   z-index: 2;
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 12px;
   padding: 36px 32px 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #fff;
   flex-shrink: 0;
-  letter-spacing: -0.3px;
+}
+
+.login-brand-logo {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
 }
 
 /* Hero content */
@@ -741,7 +741,10 @@ img#generated-image {
 
   .login-brand {
     padding: 24px 20px 0;
-    font-size: 18px;
+  }
+
+  .login-brand-logo {
+    height: 36px;
   }
 
   .login-title {
