@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js";
-import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp, doc, updateDoc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp, doc, updateDoc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 let app, auth, provider, storage, db;
 
@@ -379,6 +379,59 @@ document.getElementById('stencil-btn').addEventListener('click', async () => {
 
 // Init
 populateSelects();
+loadLoginGallery();
+
+/* --- Login Gallery --- */
+
+async function loadLoginGallery() {
+    const track = document.getElementById('login-gallery-track');
+    if (!track) return;
+
+    // Static fallback images (always available)
+    const placeholders = [
+        'hero-tattoo.jpg',
+        'images/tattoo.png',
+        'images/stencil.png',
+        'hero-stencil.png',
+        'hero-tattoo.jpg',
+        'images/tattoo.png',
+        'images/stencil.png',
+    ];
+
+    let images = [];
+
+    try {
+        // Attempt to load latest public tattoos — requires Firestore rules to allow collection reads
+        const q = query(collection(db, "tattoos"), orderBy("createdAt", "desc"), limit(8));
+        const snapshot = await getDocs(q);
+        snapshot.forEach(d => {
+            if (d.data().imageUrl) images.push(d.data().imageUrl);
+        });
+    } catch {
+        // Silently fall back to placeholders if Firestore denies unauthenticated reads
+    }
+
+    if (images.length < 3) images = placeholders;
+
+    const count = Math.min(images.length, 7);
+    const centerIdx = Math.floor(count / 2);
+
+    track.innerHTML = '';
+    images.slice(0, count).forEach((src, i) => {
+        const diff = Math.abs(i - centerIdx);
+        const card = document.createElement('div');
+        const posClass = diff === 0 ? 'gallery-pos-0' : diff === 1 ? 'gallery-pos-1' : '';
+        card.className = `gallery-card ${posClass}`.trim();
+
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = 'AI Generated Tattoo';
+        img.loading = 'lazy';
+
+        card.appendChild(img);
+        track.appendChild(card);
+    });
+}
 
 /* --- Firebase Authentication Logic --- */
 

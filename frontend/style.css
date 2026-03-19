@@ -342,126 +342,185 @@ img#generated-image {
   }
 }
 
-/* --- Firebase Login & Auth UI --- */
+/* --- Login Page --- */
 .login-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: var(--bg-primary);
-  /* Use solid color to hide everything underneath */
+  background: #080C14;
   display: flex;
+  flex-direction: column;
+  overflow: hidden;
   z-index: 1000;
   transition: opacity 0.5s ease;
 }
 
-.login-left {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  background-color: #0A0A0B;
+/* Decorative background rings */
+.login-rings {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.ring-1 {
+  width: 700px;
+  height: 700px;
+  top: -280px;
+  left: -120px;
+}
+
+.ring-2 {
+  width: 980px;
+  height: 980px;
+  top: -430px;
+  left: -260px;
+}
+
+.ring-3 {
+  width: 520px;
+  height: 520px;
+  top: 15%;
+  right: -180px;
+}
+
+/* Top-left branding */
+.login-brand {
   position: relative;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 32px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
 }
 
-/* Subtle Tech background on left side */
-.login-left::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 40%),
-    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.02) 10px, rgba(255, 255, 255, 0.02) 11px);
-  pointer-events: none;
-  z-index: -1;
-}
-
-.login-content {
-  max-width: 480px;
-  width: 100%;
-  text-align: left;
+/* Hero content */
+.login-hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 24px 24px;
+  z-index: 2;
+  position: relative;
 }
 
 .login-title {
-  font-family: inherit;
-  font-size: var(--login-title-size);
+  font-size: 4rem;
   font-weight: 800;
-  line-height: 1.1;
-  margin-top: 0;
-  margin-bottom: 24px;
-  color: #FFFFFF;
+  line-height: 1.15;
+  color: #fff;
   letter-spacing: -0.03em;
+  margin-bottom: 20px;
+}
+
+.login-title-accent {
+  background: linear-gradient(135deg, #818CF8 0%, #A78BFA 50%, #C084FC 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .login-subtitle {
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   color: #9CA3AF;
-  margin-bottom: 0px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .login-btn-container {
+  margin-top: 36px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin: 40px 0;
+  justify-content: center;
 }
 
 .login-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 12px;
   background-color: white !important;
-  color: #000 !important;
+  color: #111 !important;
   border: none !important;
   font-weight: 600 !important;
-  font-size: 1.05rem !important;
+  font-size: 1rem !important;
   padding: 14px 28px !important;
   border-radius: var(--border-radius-pill) !important;
-  width: fit-content;
-  min-width: 250px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
   margin-top: 0 !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .login-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 28px rgba(255, 255, 255, 0.18) !important;
 }
-
 
 .google-icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 12px;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }
 
-.login-right {
-  flex: 1;
+.btn-arrow {
+  flex-shrink: 0;
+}
+
+/* Image gallery */
+.login-gallery {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #0A0A0B;
+  z-index: 2;
+  height: 400px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
-.split-hero {
+.login-gallery-track {
   display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 14px;
+  height: 100%;
+  padding-bottom: 32px;
+}
+
+.gallery-card {
+  flex-shrink: 0;
+  width: 185px;
+  height: 250px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.gallery-card.gallery-pos-1 {
+  height: 300px;
+}
+
+.gallery-card.gallery-pos-0 {
+  height: 360px;
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 40px rgba(99, 102, 241, 0.25);
+}
+
+.gallery-card img {
   width: 100%;
   height: 100%;
-}
-
-.hero-img {
-  width: 50%;
-  height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .user-bar {
@@ -668,47 +727,36 @@ img#generated-image {
   }
 
   .login-overlay {
-    flex-direction: column;
     overflow-y: auto;
   }
 
-  .login-left {
-    padding: 40px 20px 0 20px;
-    min-height: auto;
-    width: 100%;
-    flex: none;
-  }
-
-  .login-right {
-    display: flex;
-    width: 100%;
-    height: 40vh;
-    /* Show hero images below the login form */
-    flex: none;
-    border-top: 1px solid var(--border-color);
+  .login-brand {
+    padding: 20px 20px;
   }
 
   .login-title {
-    font-size: 2.5rem;
-    text-align: center;
+    font-size: 2.4rem;
   }
 
-  .login-subtitle {
-    font-size: 1rem;
-    text-align: center;
-
-    br {
-      display: none;
-    }
+  .login-subtitle br {
+    display: none;
   }
 
-  .login-btn-container {
-    align-items: center;
-    margin: 40px 0;
+  .login-gallery {
+    height: 280px;
   }
 
-  .login-content {
-    text-align: center;
+  .gallery-card {
+    width: 130px;
+    height: 175px;
+  }
+
+  .gallery-card.gallery-pos-1 {
+    height: 210px;
+  }
+
+  .gallery-card.gallery-pos-0 {
+    height: 255px;
   }
 
   .history-grid {
