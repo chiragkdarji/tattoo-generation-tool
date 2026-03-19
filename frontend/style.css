@@ -740,11 +740,15 @@ img#generated-image {
   }
 
   .login-brand {
-    padding: 24px 20px 0;
+    padding: 50px 20px 0 24px;
   }
 
   .login-brand-logo {
-    height: 36px;
+    height: 70px;
+  }
+
+  .login-hero {
+    padding: 0 24px 50px;
   }
 
   .login-title {
