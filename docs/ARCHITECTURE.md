@@ -8,7 +8,7 @@
 
 ## Backend
 - **Framework**: Node.js with Express.
-- **Image Processing**: Jimp (Node.js) and Python (OpenCV) for high-quality stencil extraction.
+- **Image Processing**: Gemini AI for stencil extraction (converts tattoo photos to flat 2D line-art stencils).
 - **Security**: Environment variable masking, Firebase Admin SDK for backend-only database writes.
 - **CORS**: Configured to allow cross-origin requests from the Firebase deployment.
 

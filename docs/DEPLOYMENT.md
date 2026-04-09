@@ -9,7 +9,7 @@
    - `FIREBASE_PROJECT_ID`: `tattoo-generator-87f36`
    - `FIREBASE_SERVICE_ACCOUNT`: (The full JSON key from Firebase)
    - `NANO_BANANA_API_KEY`: (Your Google Gemini Key)
-   - `FRONTEND_URL`: `https://tattoo-generator-87f36.web.app`
+   - `FRONTEND_URL`: `https://generate.tattoosuggest.com`
 
 ## Frontend (Firebase Hosting)
 1. Run `npm install firebase-tools` locally.
@@ -17,5 +17,5 @@
 3. Run `npx firebase deploy --only hosting`.
 
 ## Stripe Webhook Setup
-1. Point Stripe to: `https://your-backend.onrender.com/api/stripe-webhook`.
+1. Point Stripe to: `https://tattoo-generation-tool.onrender.com/api/stripe-webhook`.
 2. Select only the `checkout.session.completed` event.
