@@ -1,4 +1,4 @@
-# Tattoo Suggest — AI Tattoo Design & Stencil Generator
+# Tattoo Suggest - AI Tattoo Design & Stencil Generator
 
 Generate hyper-realistic tattoo mockups and downloadable stencils using AI.
 
@@ -8,16 +8,16 @@ Generate hyper-realistic tattoo mockups and downloadable stencils using AI.
 
 ## What It Does
 
-Tattoo Suggest lets users design a tattoo by selecting placement, style, subject, shading technique, and secondary elements — then generates a photorealistic studio-quality mockup using the Gemini 2.5 Flash image generation API. A one-click stencil export converts the mockup into line art ready for the tattooing chair.
+Tattoo Suggest lets users design a tattoo by selecting placement, style, subject, shading technique, and secondary elements, then generates a photorealistic studio-quality mockup using the Gemini 2.5 Flash image generation API. A one-click stencil export converts the mockup into line art ready for the tattooing chair.
 
 ## Features
 
-- **AI Tattoo Generation** — Photorealistic images via Gemini 2.5 Flash, driven by structured prompts built from user selections
-- **Stencil Extraction** — Converts generated tattoos into black-and-white stencil line art for printing
-- **Credit System** — New users receive 250 free credits; each generation costs 50 credits
-- **Credit Purchases** — Buy 1,500 credits for $49.99 via Stripe Checkout
-- **Generation History** — All generations saved to Firestore and tied to the user's account
-- **Google Login** — Firebase Authentication with Google OAuth
+- **AI Tattoo Generation**: Photorealistic images via Gemini 2.5 Flash, driven by structured prompts built from user selections
+- **Stencil Extraction**: Converts generated tattoos into black-and-white stencil line art for printing
+- **Credit System**: New users receive 250 free credits; each generation costs 50 credits
+- **Credit Purchases**: Buy 1,500 credits for $49.99 via Stripe Checkout
+- **Generation History**: All generations saved to Firestore and tied to the user's account
+- **Google Login**: Firebase Authentication with Google OAuth
 
 ## Tech Stack
 
@@ -31,17 +31,17 @@ Tattoo Suggest lets users design a tattoo by selecting placement, style, subject
 | Backend API | Node.js + Express on Render.com |
 | AI | Gemini 2.5 Flash (image generation) |
 | Payments | Stripe Checkout + Webhooks |
-| CI/CD | GitHub Actions → Firebase deploy on push to `master` |
+| CI/CD | GitHub Actions, Firebase deploy on push to `master` |
 
 ## Tattoo Options
 
 Users build their prompt from five categories:
 
-1. **Placement** — Forearm, upper arm, torso, leg, hand/foot, neck
-2. **Style** — Blackwork, realism, illustrative, geometric, watercolor, Japanese, tribal, script
-3. **Primary Subject** — Flora/fauna, symbolic objects, figures, mythology, pop culture, celestial
-4. **Secondary Elements** — Integrated text, geometric frames, nature fillers, background effects
-5. **Shading Technique** — Stippling, smooth grey-wash, high contrast, cross-hatching, whip shading, fine-line
+1. **Placement**: Forearm, upper arm, torso, leg, hand/foot, neck
+2. **Style**: Blackwork, realism, illustrative, geometric, watercolor, Japanese, tribal, script
+3. **Primary Subject**: Flora/fauna, symbolic objects, figures, mythology, pop culture, celestial
+4. **Secondary Elements**: Integrated text, geometric frames, nature fillers, background effects
+5. **Shading Technique**: Stippling, smooth grey-wash, high contrast, cross-hatching, whip shading, fine-line
 
 ## Repository Structure
 
